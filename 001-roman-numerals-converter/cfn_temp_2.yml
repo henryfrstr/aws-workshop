@@ -20,7 +20,7 @@ Resources:
       SecurityGroups:
         - !Ref InstanceSecurityGroup
       KeyName: !Ref KeyName
-      ImageId: ami-09d95fab7fff3776c
+      ImageId: ami-0c3e74fa87d2a4227
       UserData:
         Fn::Base64: !Sub |
           #! /bin/bash

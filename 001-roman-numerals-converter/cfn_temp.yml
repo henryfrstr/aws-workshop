@@ -19,7 +19,7 @@ Resources:
   MyWebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-09d95fab7fff3776c
+      ImageId: ami-0c3e74fa87d2a4227
       InstanceType: t2.micro
       SecurityGroupIds:
         - !Ref MySecurityGroup
