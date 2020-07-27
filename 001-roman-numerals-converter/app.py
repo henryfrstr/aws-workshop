@@ -19,11 +19,11 @@ def index():
     if request.method == "POST":
         num = request.form.get("number")
         if not num.isdigit() or not (0 < int(num) < 4000):
-            return render_template("index.html", not_valid=True, developer_name="codebenders")
+            return render_template("index.html", not_valid=True, developer_name="Henry")
 
-        return render_template("result.html", number_decimal=num, developer_name="codebenders", number_roman=convert(num))
+        return render_template("result.html", number_decimal=num, developer_name="Henry", number_roman=convert(num))
     else:
-        return render_template("index.html", not_valid=False, developer_name="codebenders")
+        return render_template("index.html", not_valid=False, developer_name="Henry")
 
 
 if __name__ == "__main__":
