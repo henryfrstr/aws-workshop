@@ -46,10 +46,10 @@ Resources:
             yum update -y
             yum install python3 -y
             pip3 install flask
-            wget -P templates https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/002-milliseconds-converter/templates/index.html
-            wget -P templates https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/002-milliseconds-converter/templates/result.html
-            wget https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/002-milliseconds-converter/app.py
-            python3 app.py
+            wget -P /home/ec2-user/templates https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/002-milliseconds-converter/templates/index.html
+            wget -P /home/ec2-user/templates https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/002-milliseconds-converter/templates/result.html
+            wget -P /home/ec2-user https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/002-milliseconds-converter/app.py
+            python3 /home/ec2-user/app.py
   WebServersTG:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
