@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Cloudformation template for milliseconds converter application
+  This app runs on application load balancer
+
+Resources:
+  ALBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable HTTP for ALB #required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  WebServersSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable HTTP for App only from ALB #required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  WebServerLT:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-0c3e74fa87d2a4227
+        InstanceType: t2.micro
+        KeyName: ami
+        SecurityGroupIds:
+          - !GetAtt WebServersSecurityGroup.GroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub Web Server of ${AWS::StackName} Stack
+        UserData:
+          Fn::Base64: |
+            #! /bin/bash
+            yum update -y
+            yum install python3 -y
+            pip3 install flask
+            wget -P templates https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/001-roman-numerals-converter/templates/index.html
+            wget -P templates https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/001-roman-numerals-converter/templates/result.html
+            wget https://raw.githubusercontent.com/henryfrstr/aws-workshop/master/001-roman-numerals-converter/app.py
+            python3 app.py
+  WebServersTG:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      VpcId: !GetAtt WebServersSecurityGroup.VpcId
+  ApplicationLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      IpAddressType: ipv4
+      Scheme: internet-facing
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+      Subnets:
+        - subnet-d3abcc89
+        - subnet-9fe3d6d7
+        - subnet-3ae9b35c
+      Type: application
+  ALBListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions: #required
+        - TargetGroupArn: !Ref WebServersTG
+          Type: forward
+      LoadBalancerArn: !Ref ApplicationLoadBalancer #required
+      Port: 80 #required
+      Protocol: HTTP #required
+  WebServerASG:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AvailabilityZones: !GetAZs ""
+      DesiredCapacity: 2
+      HealthCheckGracePeriod: 90
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebServerLT
+        Version: !GetAtt WebServerLT.LatestVersionNumber
+      MaxSize: 3 #required
+      MinSize: 1 #required
+      TargetGroupARNs:
+        - !Ref WebServersTG
+Outputs:
+  WebsiteURL:
+    Description: Milliseconds Converter Application Load Balancer URL
+    Value: !Sub
+      - http://${ALBaddress}
+      - ALBaddress: !GetAtt ApplicationLoadBalancer.DNSName
