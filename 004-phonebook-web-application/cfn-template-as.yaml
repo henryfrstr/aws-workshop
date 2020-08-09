@@ -1,8 +1,16 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
   Cloudformation template for Phonebook Application.
-
 Resources:
+  ALBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable HTTP for ALB #required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
   WebServerSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
@@ -11,22 +19,20 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-  WebServerHost:
-    Type: "AWS::EC2::Instance"
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+  WebServerLT:
+    Type: "AWS::EC2::LaunchTemplate"
     Properties:
-      ImageId: ami-07d9160fa81ccffb5
-      InstanceType: t2.micro
-      KeyName: ami
-      SecurityGroupIds:
-        - !Ref WebServerSecurityGroup
-      Tags:
-        - Key: Name
-          Value: !Sub Web Server of ${AWS::StackName} Stack
+      LaunchTemplateData:
+        ImageId: ami-07d9160fa81ccffb5
+        InstanceType: t2.micro
+        SecurityGroupIds:
+          - !GetAtt WebServerSecurityGroup.GroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub Web Server of ${AWS::StackName} Stack
       UserData:
         Fn::Base64: !Sub
           - |
@@ -43,7 +49,50 @@ Resources:
             curl -s --create-dirs -o "/home/ec2-user/app.py" -L "$FOLDER"app.py
             python3 /home/ec2-user/app.py
           - MyDBURI: !GetAtt MyDatabaseServer.Endpoint.Address
-
+  WebServerTG:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      UnhealthyThresholdCount: 3
+      VpcId: !GetAtt WebServerSecurityGroup.VpcId
+  ApplicationLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      IpAddressType: ipv4
+      Scheme: internet-facing
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+      Subnets:
+        - subnet-d3abcc89
+        - subnet-9fe3d6d7
+        - subnet-3ae9b35c
+      Type: application
+  ALBListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions: #required
+        - TargetGroupArn: !Ref WebServerTG
+          Type: forward
+      LoadBalancerArn: !Ref ApplicationLoadBalancer #required
+      Port: 80 #required
+      Protocol: HTTP #required
+  WebServerASG:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AvailabilityZones: !GetAZs ""
+      DesiredCapacity: 2
+      HealthCheckGracePeriod: 300
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebServerLT
+        Version: !GetAtt WebServerLT.LatestVersionNumber
+      MaxSize: 3 #required
+      MinSize: 1 #required
+      TargetGroupARNs:
+        - !Ref WebServerTG
   MyDBSecurityGroup:
     Type: "AWS::RDS::DBSecurityGroup"
     Properties:
@@ -72,10 +121,9 @@ Resources:
       MultiAZ: false
       Port: 3306
       PubliclyAccessible: true
-
 Outputs:
   WebsiteURL:
     Description: Phonebook App URL
     Value: !Sub
-      - http://${PublicAddress}
-      - PublicAddress: !GetAtt WebServerHost.PublicDnsName
+      - http://${ALBAddress}
+      - ALBAddress: !GetAtt ApplicationLoadBalancer.DnsName
