@@ -4,7 +4,7 @@ from mysql.connector import errorcode
 config = {
     'user': 'admin',
     'password': 'henry_1',
-    'host': '....',
+    'host': 'phonebook-db.c12gpvpslbgj.eu-west-1.rds.amazonaws.com',
     'database': 'phonebook',
     'raise_on_warnings': True
 }

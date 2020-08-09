@@ -46,8 +46,8 @@ Resources:
               curl -s --create-dirs -o "/home/ec2-user/templates/index.html" -L "$FOLDER"templates/index.html
               curl -s --create-dirs -o "/home/ec2-user/templates/add-update.html" -L "$FOLDER"templates/add-update.html
               curl -s --create-dirs -o "/home/ec2-user/templates/delete.html" -L "$FOLDER"templates/delete.html
-              curl -s --create-dirs -o "/home/ec2-user/app_1.py" -L "$FOLDER"app.py
-              python3 /home/ec2-user/app.py
+              curl -s --create-dirs -o "/home/ec2-user/app_1.py" -L "$FOLDER"app_1.py
+              python3 /home/ec2-user/app_1.py
             - MyDBURI: !GetAtt MyDatabaseServer.Endpoint.Address
   WebServerTG:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
@@ -115,7 +115,7 @@ Resources:
       DeletionProtection: false
       Engine: MySQL
       EngineVersion: 8.0.19
-      MasterUserPassword: henry_1
+      MasterUserPassword: henry_1234
       MasterUsername: admin
       MonitoringInterval: 0
       MultiAZ: false
