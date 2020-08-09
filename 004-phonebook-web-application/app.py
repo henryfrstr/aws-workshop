@@ -22,7 +22,7 @@ connection.autocommit(True)
 cursor = connection.cursor()
 
 
-def init_phonebook_db(cursor):
+def init_phonebook_db():
     drop_table = 'DROP TABLE IF EXISTS phonebook.phonebook;'
     phonebook_table = """
     CREATE TABLE phonebook(
@@ -182,4 +182,5 @@ def delete_record():
 
 
 if __name__ == '__main__':
+    init_phonebook_db()
     app.run(host='0.0.0.0', port=80)
