@@ -3,7 +3,7 @@ from mysql.connector import errorcode
 
 config = {
     'user': 'admin',
-    'password': 'henry_1',
+    'password': 'henry_1234',
     'host': 'phonebook-db.c12gpvpslbgj.eu-west-1.rds.amazonaws.com',
     'database': 'phonebook',
     'raise_on_warnings': True
@@ -11,7 +11,7 @@ config = {
 
 
 def init_phonebook_db(cursor):
-    drop_table = 'DROP TABLE IF EXISTS phonebook.phonebook;'
+    # drop_table = 'DROP TABLE IF EXISTS phonebook.phonebook;'
     phonebook_table = """
     CREATE TABLE phonebook(
     id INT NOT NULL AUTO_INCREMENT,
@@ -24,18 +24,18 @@ def init_phonebook_db(cursor):
     data = """
     INSERT INTO phonebook.phonebook (name, number)
     VALUES
-        ("Callahan", "1234567890"),
+        ("Hnery", "1234567890"),
         ("Sergio Taco", "67854"),
         ("Vincenzo Altobelli", "876543554");
     """
 
-    cursor.execute(drop_table)
+    # cursor.execute(drop_table)
     cursor.execute(phonebook_table)
     cursor.execute(data)
 
 
 try:
-    cnx = mysql.connect(**config)
+    cnx = mysql.connector.connect(**config)
     init_phonebook_db(cnx.cursor(buffered=True))
     cnx.commit()
 except mysql.connector.Error as err:
@@ -47,3 +47,4 @@ except mysql.connector.Error as err:
         print(err)
 else:
     print("Phonebook table created and populated succesfully")
+    cnx.close()
